@@ -234,6 +234,45 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
     @Override
     public UploadedMedia uploadMedia(File image) throws TwitterException {
         checkFileValidity(image);
+        
+        String filename = image.getName();
+        long filesize = image.length();
+        if(filename.endsWith("mp4")){
+        	
+        	// .1 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=INIT&media_type=video/mp4&total_bytes=3703953"
+        	JSONObject obj = post(conf.getUploadBaseURL() + "media/upload.json", 
+        			new HttpParameter[]{new HttpParameter("command", "INIT"), 
+        								new HttpParameter("media_type", "video/mp4"),
+        								new HttpParameter("total_bytes", filesize)}).asJSONObject();
+        	
+        	long media_id;
+			try {
+				media_id = obj.getLong("media_id");
+				if(media_id > 0l){
+	        		// .2 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=APPEND&media_id=613539900776845313&segment_index=0" --file /data2/temp/JAPAN.mp4 --file-field "media"
+					HttpResponse response = post(conf.getUploadBaseURL() + "media/upload.json",
+							new HttpParameter[]{new HttpParameter("command", "APPEND"),
+												new HttpParameter("media_id", media_id),
+												new HttpParameter("segment_index", 0),
+												new HttpParameter("media", image)});
+					
+					if(response.statusCode >= 200 && response.statusCode < 300){
+						// .3 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=FINALIZE&media_id=613539900776845313"
+						return new UploadedMedia(post(conf.getUploadBaseURL() + "media/upload.json", 
+			        			new HttpParameter[]{new HttpParameter("command", "FINALIZE"), 
+													new HttpParameter("media_id", media_id),}).asJSONObject());
+						
+					}
+					
+	        	}
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        	
+        }
+        
+        
         return new UploadedMedia(post(conf.getUploadBaseURL() + "media/upload.json"
                 , new HttpParameter[]{new HttpParameter("media", image)}).asJSONObject());
     }
