@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.RandomAccess;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static twitter4j.HttpParameter.getParameterArray;
@@ -237,6 +238,8 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
         
         String filename = image.getName();
         long filesize = image.length();
+        int segment_indexes = 0;
+        
         if(filename.endsWith("mp4")){
         	
         	// .1 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=INIT&media_type=video/mp4&total_bytes=3703953"
@@ -249,14 +252,49 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
 			try {
 				media_id = obj.getLong("media_id");
 				if(media_id > 0l){
-	        		// .2 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=APPEND&media_id=613539900776845313&segment_index=0" --file /data2/temp/JAPAN.mp4 --file-field "media"
-					HttpResponse response = post(conf.getUploadBaseURL() + "media/upload.json",
-							new HttpParameter[]{new HttpParameter("command", "APPEND"),
-												new HttpParameter("media_id", media_id),
-												new HttpParameter("segment_index", 0),
-												new HttpParameter("media", image)});
 					
-					if(response.statusCode >= 200 && response.statusCode < 300){
+					FileInputStream fis = new FileInputStream(image);
+					BufferedInputStream bis = new BufferedInputStream(fis);
+					
+					
+					
+					int count = 0;
+					int uploadStatus = 200;
+					String tmpDir = System.getProperty("java.io.tmpdir");
+					while(bis.available() > 0){
+						File tmpFile = new File(tmpDir + File.separator + "twitterUploadTmp.mp4");
+						FileOutputStream fos = new FileOutputStream(tmpFile);
+						
+						byte[] b = new byte[1024*1024];
+						int res = bis.read(b);
+						fos.write(b, 0, res);
+						fos.flush();
+						fos.close();
+						
+						
+						// .2 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=APPEND&media_id=613539900776845313&segment_index=0" --file /data2/temp/JAPAN.mp4 --file-field "media"
+						HttpResponse response = post(conf.getUploadBaseURL() + "media/upload.json",
+								new HttpParameter[]{new HttpParameter("command", "APPEND"),
+													new HttpParameter("media_id", media_id),
+													new HttpParameter("segment_index", count),
+													new HttpParameter("media", tmpFile)});
+						
+						tmpFile.delete();
+						
+						if(response.statusCode >= 200 && response.statusCode < 300){
+							uploadStatus = 200;
+						}else{
+							uploadStatus = 400;
+						}
+						
+						
+						count++;
+					}
+					
+					bis.close();
+					fis.close();
+
+					if(uploadStatus == 200){
 						// .3 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=FINALIZE&media_id=613539900776845313"
 						return new UploadedMedia(post(conf.getUploadBaseURL() + "media/upload.json", 
 			        			new HttpParameter[]{new HttpParameter("command", "FINALIZE"), 
@@ -268,7 +306,13 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
         	
         }
         
