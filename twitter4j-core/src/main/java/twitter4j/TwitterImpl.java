@@ -48,6 +48,8 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
     private static final ConcurrentHashMap<Configuration, HttpParameter[]> implicitParamsMap = new ConcurrentHashMap<Configuration, HttpParameter[]>();
     private static final ConcurrentHashMap<Configuration, String> implicitParamsStrMap = new ConcurrentHashMap<Configuration, String>();
 
+    private static final Logger logger = Logger.getLogger(TwitterImpl.class);
+    
     /*package*/
     TwitterImpl(Configuration conf, Authorization auth) {
         super(conf, auth);
@@ -246,6 +248,8 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
         	JSONObject obj = post(conf.getUploadBaseURL() + "media/upload.json", 
         			new HttpParameter[]{new HttpParameter("command", "INIT"), 
         								new HttpParameter("media_type", "video/mp4"),
+        								// using async method: media_category=amplify_video
+        								new HttpParameter("media_category", "amplify_video"),
         								new HttpParameter("total_bytes", filesize)}).asJSONObject();
         	
         	long media_id;
@@ -295,10 +299,40 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
 					fis.close();
 
 					if(uploadStatus == 200){
-						// .3 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=FINALIZE&media_id=613539900776845313"
-						return new UploadedMedia(post(conf.getUploadBaseURL() + "media/upload.json", 
+						
+						
+						//(sync)  .3 twurl -H upload.twitter.com "/1.1/media/upload.json" -d "command=FINALIZE&media_id=613539900776845313"
+						UploadedMedia um =  new UploadedMedia(post(conf.getUploadBaseURL() + "media/upload.json", 
 			        			new HttpParameter[]{new HttpParameter("command", "FINALIZE"), 
 													new HttpParameter("media_id", media_id),}).asJSONObject());
+						
+						//(async) .3 twurl -H upload.twitter.com "/1.1/media/upload.json?command=STATUS&media_id=601413451156586496"
+						if(um.getState() != null){
+							while("pending".equalsIgnoreCase(um.getState()) || "in_progress".equalsIgnoreCase(um.getState())){
+								logger.info("media upload status: " + um.getState());
+								um =  new UploadedMedia(get(conf.getUploadBaseURL() + "media/upload.json", 
+					        			new HttpParameter[]{new HttpParameter("command", "STATUS"), 
+															new HttpParameter("media_id", media_id),}).asJSONObject());
+								
+								if("succeeded".equalsIgnoreCase(um.getState())){
+									return um;
+								}
+								
+								try {
+									Thread.sleep(um.getCheck_after_secs() * 1000l);
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+							if("failed".equalsIgnoreCase(um.getState())){
+								logger.info("media upload failed. ");
+								return um;
+							}
+							
+						}else{
+							return um;
+						}
 						
 					}
 					
