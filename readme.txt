@@ -95,6 +95,7 @@ Rui Silva
 Sam Pullara <sam at sampullara.com> @sampullara
 Sdk0815 <developer at terumode.net> @Sdk0815
 Shane Gibson <shane.a.gibson at gmail.com> @shaneagibson
+Shintaro Watanabe <shintaro.watanabe1226@gmail.com> @shin_taro_1226
 Simone Aiello <aiello.simone103 at gmail.com> @saiello103
 Steve Lhomme <slhomme at matroska.org> @robux4
 Steven Liu <steven at twitter.com> @steven
@@ -114,5 +115,6 @@ William Morgan <william at twitter.com> @wm
 William O'Hanley <william at wohanley.com> @wohanley
 William Vanderhoef <william.vanderhoef at gmail.com> @thePoofy
 withgod <noname at withgod.jp> @withgod
+Yuichiro Kawano <tresener.yu1ro at gmail.com> @tresener_yu1ro
 Yusuke Yamamoto <yusuke at mac.com> @yusuke
 Yuto Uehara <mumei.himazin at gmail.com> @mumei_himazin
