@@ -350,6 +350,11 @@ class TwitterImpl extends TwitterBaseImpl implements Twitter {
         	
         }
         
+        if(!filename.toLowerCase().endsWith("jpg") && !filename.toLowerCase().endsWith("gif") && !filename.toLowerCase().endsWith("png") && !filename.toLowerCase().endsWith("jpeg")){
+        	TwitterException te = new TwitterException("Filetype not valid! : " + filename, new Exception("Filetype not valid!"), 403);
+        	throw te;
+        }
+        
         
         return new UploadedMedia(post(conf.getUploadBaseURL() + "media/upload.json"
                 , new HttpParameter[]{new HttpParameter("media", image)}).asJSONObject());
