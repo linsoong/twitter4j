@@ -22,6 +22,7 @@ import twitter4j.Logger;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -73,6 +74,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
     private boolean includeEntitiesEnabled = true;
     private boolean trimUserEnabled = false;
     private boolean includeExtAltTextEnabled = true;
+    private boolean tweetModeExtended = true;
     private boolean includeEmailEnabled = false;
 
     private boolean jsonStoreEnabled = false;
@@ -97,6 +99,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , null // proxy user
                 , null // proxy password
                 , -1 // proxy port
+                , false // proxy socks
                 , 20000 // connection timeout
                 , 120000 // read timeout
                 , false // pretty debug
@@ -109,17 +112,19 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
         private String httpProxyHost = null;
         private String httpProxyUser = null;
         private String httpProxyPassword = null;
+        private boolean httpProxySocks = false;
         private int httpProxyPort = -1;
         private int httpConnectionTimeout = 20000;
         private int httpReadTimeout = 120000;
         private boolean prettyDebug = false;
         private boolean gzipEnabled = true;
 
-        MyHttpClientConfiguration(String httpProxyHost, String httpProxyUser, String httpProxyPassword, int httpProxyPort, int httpConnectionTimeout, int httpReadTimeout, boolean prettyDebug, boolean gzipEnabled) {
+        MyHttpClientConfiguration(String httpProxyHost, String httpProxyUser, String httpProxyPassword, int httpProxyPort, boolean httpProxySocks, int httpConnectionTimeout, int httpReadTimeout, boolean prettyDebug, boolean gzipEnabled) {
             this.httpProxyHost = httpProxyHost;
             this.httpProxyUser = httpProxyUser;
             this.httpProxyPassword = httpProxyPassword;
             this.httpProxyPort = httpProxyPort;
+            this.httpProxySocks = httpProxySocks;
             this.httpConnectionTimeout = httpConnectionTimeout;
             this.httpReadTimeout = httpReadTimeout;
             this.prettyDebug = prettyDebug;
@@ -144,6 +149,11 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
         @Override
         public String getHttpProxyPassword() {
             return httpProxyPassword;
+        }
+
+        @Override
+        public boolean isHttpProxySocks() {
+            return httpProxySocks;
         }
 
         @Override
@@ -184,8 +194,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
             MyHttpClientConfiguration that = (MyHttpClientConfiguration) o;
 
             if (gzipEnabled != that.gzipEnabled) return false;
+            if (httpProxySocks != that.httpProxySocks) return false;
             if (httpConnectionTimeout != that.httpConnectionTimeout) return false;
             if (httpProxyPort != that.httpProxyPort) return false;
+            if (httpProxySocks != that.httpProxySocks) return false;
             if (httpReadTimeout != that.httpReadTimeout) return false;
             if (prettyDebug != that.prettyDebug) return false;
             if (httpProxyHost != null ? !httpProxyHost.equals(that.httpProxyHost) : that.httpProxyHost != null)
@@ -204,6 +216,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
             result = 31 * result + (httpProxyUser != null ? httpProxyUser.hashCode() : 0);
             result = 31 * result + (httpProxyPassword != null ? httpProxyPassword.hashCode() : 0);
             result = 31 * result + httpProxyPort;
+            result = 31 * result + (httpProxySocks ? 1 : 0);
             result = 31 * result + httpConnectionTimeout;
             result = 31 * result + httpReadTimeout;
             result = 31 * result + (prettyDebug ? 1 : 0);
@@ -218,6 +231,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                     ", httpProxyUser='" + httpProxyUser + '\'' +
                     ", httpProxyPassword='" + httpProxyPassword + '\'' +
                     ", httpProxyPort=" + httpProxyPort +
+                    ", proxyType=" + (httpProxySocks ? Proxy.Type.SOCKS : Proxy.Type.HTTP) +
                     ", httpConnectionTimeout=" + httpConnectionTimeout +
                     ", httpReadTimeout=" + httpReadTimeout +
                     ", prettyDebug=" + prettyDebug +
@@ -282,10 +296,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , httpConf.getHttpProxyPassword()
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , httpConf.getHttpReadTimeout()
-                , prettyDebug
-                , httpConf.isGZIPEnabled()
+                , prettyDebug, httpConf.isGZIPEnabled()
         );
     }
 
@@ -294,10 +308,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , httpConf.getHttpProxyPassword()
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , httpConf.getHttpReadTimeout()
-                , httpConf.isPrettyDebugEnabled()
-                , gzipEnabled
+                , httpConf.isPrettyDebugEnabled(), gzipEnabled
         );
     }
 
@@ -308,10 +322,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , httpConf.getHttpProxyPassword()
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , httpConf.getHttpReadTimeout()
-                , httpConf.isPrettyDebugEnabled()
-                , httpConf.isGZIPEnabled()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
         );
     }
 
@@ -320,10 +334,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , proxyUser
                 , httpConf.getHttpProxyPassword()
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , httpConf.getHttpReadTimeout()
-                , httpConf.isPrettyDebugEnabled()
-                , httpConf.isGZIPEnabled()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
         );
     }
 
@@ -332,10 +346,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , proxyPassword
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , httpConf.getHttpReadTimeout()
-                , httpConf.isPrettyDebugEnabled()
-                , httpConf.isGZIPEnabled()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
         );
     }
 
@@ -344,10 +358,22 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , httpConf.getHttpProxyPassword()
                 , proxyPort
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , httpConf.getHttpReadTimeout()
-                , httpConf.isPrettyDebugEnabled()
-                , httpConf.isGZIPEnabled()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
+        );
+    }
+
+    protected final void setHttpProxySocks(boolean isSocksProxy) {
+        httpConf = new MyHttpClientConfiguration(httpConf.getHttpProxyHost()
+                , httpConf.getHttpProxyUser()
+                , httpConf.getHttpProxyPassword()
+                , httpConf.getHttpProxyPort()
+                , isSocksProxy
+                , httpConf.getHttpConnectionTimeout()
+                , httpConf.getHttpReadTimeout()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
         );
     }
 
@@ -356,10 +382,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , httpConf.getHttpProxyPassword()
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , connectionTimeout
                 , httpConf.getHttpReadTimeout()
-                , httpConf.isPrettyDebugEnabled()
-                , httpConf.isGZIPEnabled()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
         );
     }
 
@@ -368,10 +394,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 , httpConf.getHttpProxyUser()
                 , httpConf.getHttpProxyPassword()
                 , httpConf.getHttpProxyPort()
+                , httpConf.isHttpProxySocks()
                 , httpConf.getHttpConnectionTimeout()
                 , readTimeout
-                , httpConf.isPrettyDebugEnabled()
-                , httpConf.isGZIPEnabled()
+                , httpConf.isPrettyDebugEnabled(), httpConf.isGZIPEnabled()
         );
     }
 
@@ -621,6 +647,11 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
     }
 
     @Override
+    public boolean isTweetModeExtended() {
+        return this.tweetModeExtended;
+    }
+
+    @Override
     public boolean isDaemonEnabled() {
         return daemonEnabled;
     }
@@ -644,6 +675,10 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
 
     public void setIncludeExtAltTextEnabled(boolean enabled) {
         this.includeExtAltTextEnabled = enabled;
+    }
+
+    public void setTweetModeExtended(boolean enabled) {
+        this.tweetModeExtended = enabled;
     }
 
     @Override
@@ -769,6 +804,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
         if (includeEntitiesEnabled != that.includeEntitiesEnabled) return false;
         if (trimUserEnabled != that.trimUserEnabled) return false;
         if (includeExtAltTextEnabled != that.includeExtAltTextEnabled) return false;
+        if (tweetModeExtended != that.tweetModeExtended) return false;
         if (includeEmailEnabled != that.includeEmailEnabled) return false;
         if (jsonStoreEnabled != that.jsonStoreEnabled) return false;
         if (mbeanEnabled != that.mbeanEnabled) return false;
@@ -863,6 +899,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
         result = 31 * result + (includeEntitiesEnabled ? 1 : 0);
         result = 31 * result + (trimUserEnabled ? 1 : 0);
         result = 31 * result + (includeExtAltTextEnabled ? 1 : 0);
+        result = 31 * result + (tweetModeExtended ? 1 : 0);
         result = 31 * result + (includeEmailEnabled ? 1 : 0);
         result = 31 * result + (jsonStoreEnabled ? 1 : 0);
         result = 31 * result + (mbeanEnabled ? 1 : 0);
@@ -914,6 +951,7 @@ class ConfigurationBase implements Configuration, java.io.Serializable {
                 ", includeEntitiesEnabled=" + includeEntitiesEnabled +
                 ", trimUserEnabled=" + trimUserEnabled +
                 ", includeExtAltTextEnabled=" + includeExtAltTextEnabled +
+                ", tweetModeExtended=" + tweetModeExtended +
                 ", includeEmailEnabled=" + includeEmailEnabled +
                 ", jsonStoreEnabled=" + jsonStoreEnabled +
                 ", mbeanEnabled=" + mbeanEnabled +

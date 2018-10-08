@@ -30,13 +30,10 @@ public final class UploadedMedia implements java.io.Serializable {
     private String imageType;
     private long mediaId;
     private long size;
-    
-    // state transition flow is pending -> in_progress -> [failed|succeeded]
-    private String state;
-    // check for the update after 10 seconds
-    private int check_after_secs;
- // Optional [0-100] int value. Do not use as a replacement for the "state" field.
-    private int progress_percent;
+
+    private String processingState;
+    private int processingCheckAfterSecs;
+    private int progressPercent;
 
     /*package*/ UploadedMedia(JSONObject json) throws TwitterException {
         init(json);
@@ -61,18 +58,19 @@ public final class UploadedMedia implements java.io.Serializable {
     public long getSize() {
         return size;
     }
+    
+    public String getProcessingState() {
+    	return processingState;
+    }
+    
+    public int getProcessingCheckAfterSecs() {
+    	return processingCheckAfterSecs;
+    }
+  
+    public int getProgressPercent() {
+    	return progressPercent;
+    }
 
-    public String getState() {
-		return state;
-	}
-
-	public int getCheck_after_secs() {
-		return check_after_secs;
-	}
-
-	public int getProgress_percent() {
-		return progress_percent;
-	}
 
 	private void init(JSONObject json) throws TwitterException {
         mediaId = ParseUtil.getLong("media_id", json);
@@ -85,13 +83,15 @@ public final class UploadedMedia implements java.io.Serializable {
                 imageType = ParseUtil.getUnescapedString("image_type", image);
             }
             
-            //add media upload async method
-            if(json.has("processing_info")){
-            	JSONObject proc_info = json.getJSONObject("processing_info");
-            	state = ParseUtil.getRawString("state", proc_info);
-            	check_after_secs = ParseUtil.getInt("check_after_secs", proc_info);
-            	progress_percent = ParseUtil.getInt("progress_percent", proc_info);
+            
+            if (!json.isNull("processing_info")) {
+            	JSONObject processingInfo = json.getJSONObject("processing_info");
+            	processingState = ParseUtil.getUnescapedString("state", processingInfo);
+            	processingCheckAfterSecs = ParseUtil.getInt("check_after_secs", processingInfo);
+            	progressPercent = ParseUtil.getInt("progress_percent", processingInfo);
+            	
             }
+            
         } catch (JSONException jsone) {
             throw new TwitterException(jsone);
         }

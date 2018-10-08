@@ -90,6 +90,12 @@ public final class ConfigurationBuilder {
         return this;
     }
 
+    public ConfigurationBuilder setHttpProxySocks(boolean httpProxySocks) {
+        checkNotBuilt();
+        configurationBean.setHttpProxySocks(httpProxySocks);
+        return this;
+    }
+    
     public ConfigurationBuilder setHttpConnectionTimeout(int httpConnectionTimeout) {
         checkNotBuilt();
         configurationBean.setHttpConnectionTimeout(httpConnectionTimeout);
@@ -204,6 +210,12 @@ public final class ConfigurationBuilder {
         return this;
     }
 
+    public ConfigurationBuilder setUploadBaseURL(String uploadBaseURL) {
+        checkNotBuilt();
+        configurationBean.setUploadBaseURL(uploadBaseURL);
+        return this;
+    }
+
     public ConfigurationBuilder setStreamBaseURL(String streamBaseURL) {
         checkNotBuilt();
         configurationBean.setStreamBaseURL(streamBaseURL);
@@ -255,6 +267,12 @@ public final class ConfigurationBuilder {
     public ConfigurationBuilder setIncludeExtAltTextEnabled(boolean enabled) {
         checkNotBuilt();
         configurationBean.setIncludeExtAltTextEnabled(enabled);
+        return this;
+    }
+
+    public ConfigurationBuilder setTweetModeExtended(boolean enabled) {
+        checkNotBuilt();
+        configurationBean.setTweetModeExtended(enabled);
         return this;
     }
 
